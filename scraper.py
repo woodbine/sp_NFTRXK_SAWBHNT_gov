@@ -7,7 +7,7 @@ from multiprocessing import cpu_count
 import grequests
 
 start_url = 'http://www.amazon.com/best-sellers-books-Amazon/zgbs/books/ref=zg_bs_unv_b_1_173508_2'
-pool = Pool(cpu_count() * 8)
+pool = Pool(cpu_count() * 20)
 
 def scrape(response, **kwargs):
         listing_soup = bs(response.text, 'lxml')
@@ -19,7 +19,7 @@ def scrape(response, **kwargs):
             except:
                 pass
             today_date = str(datetime.now())
-            print asin
+            #print asin
             scraperwiki.sqlite.save(unique_keys=['Date'], data={'ASIN': asin, 'Date': today_date})
 
 
