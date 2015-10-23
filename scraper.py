@@ -6,7 +6,8 @@ from multiprocessing.dummy import Pool
 from multiprocessing import cpu_count
 import grequests
 
-start_url = 'http://www.amazon.com/best-sellers-books-Amazon/zgbs/books/ref=zg_bs_unv_b_1_173508_2'
+start_urls = ['http://www.amazon.com/best-sellers-books-Amazon/zgbs/books/ref=zg_bs_unv_b_1_173508_2',
+            'http://www.amazon.com/Best-Sellers-Toys-Games/zgbs/toys-and-games/ref=zg_bs_unv_t_1_2514571011_2']
 pool = Pool(cpu_count() * 20)
 
 def scrape(response, **kwargs):
@@ -19,7 +20,6 @@ def scrape(response, **kwargs):
             except:
                 pass
             today_date = str(datetime.now())
-            #print asin
             scraperwiki.sqlite.save(unique_keys=['Date'], data={'ASIN': asin, 'Date': today_date})
 
 
@@ -28,12 +28,17 @@ def multiparse(links):
          if l:
              return l
 
-asis = []
-def parse(url):
 
+def parse(url):
+    if url in start_urls:
+        async_list = []
+        for i in xrange(1, 6):
+            print (url+'?&pg={}'.format(i))
+            rs = (grequests.get(url+'?&pg={}'.format(i), hooks = {'response' : scrape}))
+            async_list.append(rs)
+        grequests.map(async_list)
     page = requests.get(url)
     soup = bs(page.text, 'lxml')
-    links_lists = []
     try:
         active_sel = soup.find('span', 'zg_selected').find_next()
         if active_sel.name == 'ul':
@@ -55,4 +60,5 @@ def parse(url):
 
 if __name__ == '__main__':
 
-   links = parse(start_url)
+   for start_url in start_urls:
+       links = parse( start_url)
