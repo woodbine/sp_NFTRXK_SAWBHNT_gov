@@ -61,4 +61,4 @@ def parse(url):
 if __name__ == '__main__':
 
    for start_url in start_urls:
-       links = parse( start_url)
+       parse( start_url)
