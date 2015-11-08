@@ -8,14 +8,15 @@ start_url = 'http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field
 ua = {'User-agent': 'Mozilla/5.0'}
 
 
-def parse(search_term):
+def parse(search_term, search_tag, p):
     search_page = requests.get(start_url.format(search_term), headers=ua)
-    print start_url.format(search_term)
+    print p
     soup = bs(search_page.text, 'lxml')
 
     search_rows = soup.find_all('li', 's-result-item celwidget')
     for search_row in search_rows:
         search_term = search_term
+        search_tag = search_tag
         title = search_row.find('h2', 'a-size-medium a-color-null s-inline s-access-title a-text-normal').text.strip()
         asin = search_row.find('a', 'a-link-normal s-access-detail-page  a-text-normal')['href'].split('dp/')[-1].split('/')[0]
         pubdate = ''
@@ -102,13 +103,18 @@ def parse(search_term):
             tradein = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('Trade in yours for')).find_next('span', 'a-color-price').text
         except:
             pass
-        print title
+
+        # print title, asin, pubdate, author, item_format, price_rent, price, low_price, offer_count, other1format, other1asin, other2format, other2asin, other3format, other3asin, newer, tradein
         today_date = str(datetime.now())
-        scraperwiki.sqlite.save(unique_keys=['Date'], data={'SearchString': search_term, 'Title': title, 'ASIN': asin, 'PubDate': pubdate, 'Author': author, 'Format': item_format, 'PriceRent': price_rent, 'Price': price, 'PriceLow': low_price, 'OfferCount': offer_count, 'Other1Format': other1format, 'Other1ASIN': other1asin, 'Other2Format': other2format, 'Other2ASIN': other2asin, 'Other3Format': other3format, 'Other3ASIN': other3asin, 'TradIn': tradein, 'Date': today_date})
+        scraperwiki.sqlite.save(unique_keys=['Date'], data={'SearchString': search_term, 'Search Tag': search_tag,'Title': title, 'ASIN': asin, 'PubDate': pubdate, 'Author': author, 'Format': item_format, 'PriceRent': price_rent, 'Price': price, 'PriceLow': low_price, 'OfferCount': offer_count, 'Other1Format': other1format, 'Other1ASIN': other1asin, 'Other2Format': other2format, 'Other2ASIN': other2asin, 'Other3Format': other3format, 'Other3ASIN': other3asin, 'Newer Edition': newer, 'TradeIn': tradein, 'Date': today_date})
+
 
 if __name__ == '__main__':
         file1 = open('amazon.txt', 'r')
+        p = 1
         for line in file1:
             search_term = line.split('%')[-1]
+            search_tag = line.split('%')[0]
             search_term = '+'.join(search_term.split(' '))
-            parse(search_term)
+            parse(search_term, search_tag, p)
+            p +=1
