@@ -62,7 +62,7 @@ def parse(search_term, search_tag, p):
         except:
             pass
         if other1format:
-            other1asin = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find('hr', 'a-divider-normal s-result-divider').find_next('a')['href'].split('dp/')[-1].split('/')[0]
+            other1asin = '='+'"'+search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find('hr', 'a-divider-normal s-result-divider').find_next('a')['href'].split('dp/')[-1].split('/')[0]+'"'
         else:
             other1asin = ''
         other2format = ''
@@ -71,7 +71,7 @@ def parse(search_term, search_tag, p):
         except:
             pass
         if other2format:
-            other2asin = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a')['href'].split('dp/')[-1].split('/')[0]
+            other2asin = '='+'"'+search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a')['href'].split('dp/')[-1].split('/')[0]+'"'
         else:
             other2asin = ''
         if other1format == other2format:
@@ -90,7 +90,7 @@ def parse(search_term, search_tag, p):
             except:
                 pass
         if other3format:
-            other3asin = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a').find_next('a')['href'].split('dp/')[-1].split('/')[0]
+            other3asin = '='+'"'+search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a').find_next('a')['href'].split('dp/')[-1].split('/')[0]+'"'
         else:
             other3asin = ''
         newer = ''
@@ -99,7 +99,7 @@ def parse(search_term, search_tag, p):
         except:
             pass
         if newer:
-            newer = newer['href'].split('dp/')[-1].split('/')[0]
+            newer = '='+'"'+newer['href'].split('dp/')[-1].split('/')[0]+'"'
         tradein = ''
         try:
             tradein = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('Trade in yours for')).find_next('span', 'a-color-price').text
