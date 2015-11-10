@@ -23,7 +23,7 @@ def parse(search_term, search_tag, p):
         except: continue
         pubdate = ''
         try:
-            pubdate = search_row.find('div', 'a-row a-spacing-small').find('span', 'a-size-small a-color-secondary').text.strip()
+            pubdate = search_row.find('div', 'a-row a-spacing-small').find('span', 'a-size-small a-color-secondary').text.strip().replace('by', '')
         except:
             pass
         author = ''
