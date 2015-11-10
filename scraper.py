@@ -108,7 +108,7 @@ def parse(search_term, search_tag, p):
 
         # print title, asin, pubdate, author, item_format, price_rent, price, low_price, offer_count, other1format, other1asin, other2format, other2asin, other3format, other3asin, newer, tradein
         today_date = str(datetime.now())
-        scraperwiki.sqlite.save(unique_keys=['Date'], data={'SearchString': search_term, 'Search Tag': search_tag,'Title': title, 'ASIN': asin, 'PubDate': pubdate, 'Author': author, 'Format': item_format, 'PriceRent': price_rent, 'Price': price, 'PriceLow': low_price, 'OfferCount': offer_count, 'Other1Format': other1format, 'Other1ASIN': other1asin, 'Other2Format': other2format, 'Other2ASIN': other2asin, 'Other3Format': other3format, 'Other3ASIN': other3asin, 'Newer Edition': newer, 'TradeIn': tradein, 'Date': today_date})
+        scraperwiki.sqlite.save(unique_keys=['Date'], data={'SearchString': search_term, 'Search Tag': search_tag,'Title': title, 'ASIN': asin, 'PubDate': pubdate, 'Author': author, 'Format': item_format, 'PriceRent': price_rent, 'Price': price, 'PriceLow': low_price, 'OfferCount': offer_count, 'Other1Format': other1format, 'Other1ASIN': other1asin, 'Other2Format': other2format, 'Other2ASIN': other2asin, 'Other3Format': other3format, 'Other3ASIN': other3asin, 'Newer_Edition': newer, 'TradeIn': tradein, 'Date': today_date})
 
 
 
