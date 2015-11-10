@@ -16,7 +16,7 @@ def parse(search_term, search_tag, p):
     search_rows = soup.find_all('li', 's-result-item celwidget')
     for search_row in search_rows:
         search_term = search_term
-        search_tag = search_tag
+        search_tag = '='+'"'+search_tag+'"'
         try:
             title = search_row.find('h2', 'a-size-medium a-color-null s-inline s-access-title a-text-normal').text.strip()
             asin = '='+'"'+search_row.find('a', 'a-link-normal s-access-detail-page  a-text-normal')['href'].split('dp/')[-1].split('/')[0]+'"'
