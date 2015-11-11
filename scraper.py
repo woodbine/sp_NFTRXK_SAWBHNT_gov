@@ -4,14 +4,29 @@ import scraperwiki
 from datetime import datetime
 import re
 
+
 start_url = 'http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords={}'
 ua = {'User-agent': 'Mozilla/5.0'}
 
 
-def parse(search_term, search_tag, p):
+def connect(start_url, search_term):
     search_page = requests.get(start_url.format(search_term), headers=ua)
-    print p
     soup = bs(search_page.text, 'lxml')
+    title = soup.title.text
+    while 'Robot Check' in title:
+        search_page = requests.get(start_url.format(search_term), headers=ua)
+        soup = bs(search_page.text, 'lxml')
+        title = soup.title.text
+    if soup:
+        print title, search_term
+    else:
+        connect(start_url, search_term)
+    return soup
+
+
+def parse(search_term, search_tag, p):
+    soup = connect(start_url, search_term)
+    print p
     search_tag = '='+'"'+search_tag+'"'
     search_rows = soup.find_all('li', 's-result-item celwidget')
     for search_row in search_rows:
@@ -111,13 +126,11 @@ def parse(search_term, search_tag, p):
         scraperwiki.sqlite.save(unique_keys=['Date'], data={'SearchString': unicode(search_term), 'Search Tag': search_tag, 'Title': unicode(title), 'ASIN': asin, 'PubDate': pubdate, 'Author': unicode(author), 'Format': unicode(item_format), 'PriceRent': price_rent, 'Price': price, 'PriceLow': low_price, 'OfferCount': offer_count, 'Other1Format': unicode(other1format), 'Other1ASIN': other1asin, 'Other2Format': unicode(other2format), 'Other2ASIN': other2asin, 'Other3Format': unicode(other3format), 'Other3ASIN': other3asin, 'Newer_Edition': newer, 'TradeIn': unicode(tradein), 'Date': today_date})
 
 
-
-
 if __name__ == '__main__':
         file1 = open('amazon.txt', 'r')
         p = 1
         for line in file1:
-            search_term = line.split('%')[-1]
+            search_term = line.split('%')[-1].replace('&', '%26')
             search_tag = line.split('%')[0]
             search_term = '+'.join(search_term.split(' '))
             parse(search_term, search_tag, p)
