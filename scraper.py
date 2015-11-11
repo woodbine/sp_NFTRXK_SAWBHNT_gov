@@ -18,7 +18,7 @@ def connect(start_url, search_term):
         soup = bs(search_page.text, 'lxml')
         title = soup.title.text
     if soup:
-        print title, search_term
+        pass
     else:
         connect(start_url, search_term)
     return soup
