@@ -1,140 +1,146 @@
-import sys
-reload(sys)
-sys.setdefaultencoding('UTF8')
-import requests
-from bs4 import BeautifulSoup as bs
-import scraperwiki
-from datetime import datetime
+# -*- coding: utf-8 -*-
+
+#### IMPORTS 1.0
+
+import os
 import re
+import scraperwiki
+import urllib2
+from datetime import datetime
+from bs4 import BeautifulSoup
 
 
-start_url = 'http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords={}'
-ua = {'User-agent': 'Mozilla/5.0'}
 
+#### FUNCTIONS 1.2
+import requests    # import requests to validate url
 
-def connect(start_url, search_term):
-    search_page = requests.get(start_url.format(search_term), headers=ua)
-    soup = bs(search_page.text, 'lxml')
-    title = soup.title.text
-    while 'Robot Check' in title:
-        search_page = requests.get(start_url.format(search_term), headers=ua)
-        soup = bs(search_page.text, 'lxml')
-        title = soup.title.text
-    if soup:
-        pass
+def validateFilename(filename):
+    filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
+    dateregex = '[0-9][0-9][0-9][0-9]_[0-9QY][0-9]'
+    validName = (re.search(filenameregex, filename) != None)
+    found = re.search(dateregex, filename)
+    if not found:
+        return False
+    date = found.group(0)
+    now = datetime.now()
+    year, month = date[:4], date[5:7]
+    validYear = (2000 <= int(year) <= now.year)
+    if 'Q' in date:
+        validMonth = (month in ['Q0', 'Q1', 'Q2', 'Q3', 'Q4'])
+    elif 'Y' in date:
+        validMonth = (month in ['Y1'])
     else:
-        connect(start_url, search_term)
-    return soup
+        try:
+            validMonth = datetime.strptime(date, "%Y_%m") < now
+        except:
+            return False
+    if all([validName, validYear, validMonth]):
+        return True
 
 
-def parse(search_term, search_tag, p):
-    soup = connect(start_url, search_term)
-    print p
-    search_tag = '='+'"'+search_tag+'"'
-    search_rows = soup.find_all('li', 's-result-item celwidget')
-    for search_row in search_rows:
-        search_term = search_term
-        search_tag = search_tag
-        try:
-            title = search_row.find('h2', 'a-size-medium a-color-null s-inline s-access-title a-text-normal').text.strip()
-            asin = '='+'"'+search_row.find('a', 'a-link-normal s-access-detail-page  a-text-normal')['href'].split('dp/')[-1].split('/')[0]+'"'
-        except: continue
-        pubdate = ''
-        try:
-            pubdate = search_row.find('div', 'a-row a-spacing-small').find('span', 'a-size-small a-color-secondary').text.strip().replace('by', '')
-        except:
-            pass
-        author = ''
-        try:
-            author = search_row.find('div', 'a-row a-spacing-small').find('div', 'a-row a-spacing-none').text.strip().split('by')[-1].strip()
-        except:
-            pass
-        item_format = ''
-        try:
-            item_format = search_row.find('h3', 'a-size-small a-color-null s-inline  a-text-normal').text.strip()
-        except:
-            pass
-        price_rent = ''
-        try:
-            price_rent = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('to rent')).find_previous('span', 'a-size-base a-color-price s-price a-text-bold').text
-        except:
-            pass
-        price = ''
-        try:
-            price = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('to buy')).find_previous('span', 'a-size-base a-color-price s-price a-text-bold').text
-        except:
-            pass
-        low_price = ''
-        try:
-            low_price = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('used & new')).find_previous('span', 'a-size-base a-color-price a-text-bold').text
-        except:
-            pass
-        offer_count = ''
-        try:
-            offer_count = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('offers')).replace('(', '').replace(')','')
-        except:
-            pass
-        other1format = ''
-        try:
-            other1format = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find('hr', 'a-divider-normal s-result-divider').find_next('a').text
-        except:
-            pass
-        if other1format:
-            other1asin = '='+'"'+search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find('hr', 'a-divider-normal s-result-divider').find_next('a')['href'].split('dp/')[-1].split('/')[0]+'"'
+def validateURL(url):
+    try:
+        r = requests.get(url, allow_redirects=True, timeout=20)
+        count = 1
+        while r.status_code == 500 and count < 4:
+            print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
+            count += 1
+            r = requests.get(url, allow_redirects=True, timeout=20)
+        sourceFilename = r.headers.get('Content-Disposition')
+        if sourceFilename:
+            ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
-            other1asin = ''
-        other2format = ''
-        try:
-            other2format = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a').text
-        except:
-            pass
-        if other2format:
-            other2asin = '='+'"'+search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a')['href'].split('dp/')[-1].split('/')[0]+'"'
-        else:
-            other2asin = ''
-        if other1format == other2format:
-            other1format = ''
-            other1asin = ''
-        comma = ''
-        try:
-            comma = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a').find_next('span', 'a-size-small a-color-secondary').text
-        except:
-            pass
-        other3format = ''
-        if ',' in comma:
-            other3format = ''
-            try:
-                other3format = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a').find_next('a').text
-            except:
-                pass
-        if other3format:
-            other3asin = '='+'"'+search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find(text=re.compile('Other Format')).find_next('a').find_next('a')['href'].split('dp/')[-1].split('/')[0]+'"'
-        else:
-            other3asin = ''
-        newer = ''
-        try:
-            newer = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find('div', 'a-column a-span7').find('a', text=re.compile('See newer edition of this book'))
-        except:
-            pass
-        if newer:
-            newer = '='+'"'+newer['href'].split('dp/')[-1].split('/')[0]+'"'
-        tradein = ''
-        try:
-            tradein = search_row.find('div', 'a-fixed-left-grid-col a-col-right').find(text=re.compile('Trade in yours for')).find_next('span', 'a-color-price').text
-        except:
-            pass
-
-        # print title, asin, pubdate, author, item_format, price_rent, price, low_price, offer_count, other1format, other1asin, other2format, other2asin, other3format, other3asin, newer, tradein
-        today_date = str(datetime.now())
-        scraperwiki.sqlite.save(unique_keys=['Date'], data={'SearchString': search_term, 'Search Tag': search_tag, 'Title': title, 'ASIN': asin, 'PubDate': pubdate, 'Author': author, 'Format': item_format, 'PriceRent': price_rent, 'Price': price, 'PriceLow': low_price, 'OfferCount': offer_count, 'Other1Format': other1format, 'Other1ASIN': other1asin, 'Other2Format': other2format, 'Other2ASIN': other2asin, 'Other3Format': other3format, 'Other3ASIN': other3asin, 'Newer_Edition': newer, 'TradeIn': tradein, 'Date': today_date})
+            ext = os.path.splitext(url)[1]
+        validURL = r.status_code == 200
+        validFiletype = ext in ['.csv', '.xls', '.xlsx']
+        return validURL, validFiletype
+    except:
+        print ("Error validating URL.")
+        return False, False
 
 
-if __name__ == '__main__':
-        file1 = open('amazon.txt', 'r')
-        p = 1
-        for line in file1:
-            search_term = line.split('%')[-1].replace('&', '%26')
-            search_tag = line.split('%')[0]
-            search_term = '+'.join(search_term.split(' '))
-            parse(search_term, search_tag, p)
-            p +=1
+def validate(filename, file_url):
+    validFilename = validateFilename(filename)
+    validURL, validFiletype = validateURL(file_url)
+    if not validFilename:
+        print filename, "*Error: Invalid filename*"
+        print file_url
+        return False
+    if not validURL:
+        print filename, "*Error: Invalid URL*"
+        print file_url
+        return False
+    if not validFiletype:
+        print filename, "*Error: Invalid filetype*"
+        print file_url
+        return False
+    return True
+
+
+def convert_mth_strings ( mth_string ):
+    month_numbers = {'JAN': '01', 'FEB': '02', 'MAR':'03', 'APR':'04', 'MAY':'05', 'JUN':'06', 'JUL':'07', 'AUG':'08', 'SEP':'09','OCT':'10','NOV':'11','DEC':'12' }
+    for k, v in month_numbers.items():
+        mth_string = mth_string.replace(k, v)
+    return mth_string
+
+
+#### VARIABLES 1.0
+
+entity_id = "E4210_WMBC_gov"
+url = "https://www.wigan.gov.uk/Council/DataProtection-FOI-Stats/Spending-and-Finance-data.aspx"
+errors = 0
+data = []
+
+
+#### READ HTML 1.0
+
+html = urllib2.urlopen(url)
+soup = BeautifulSoup(html, 'lxml')
+
+#### SCRAPE DATA
+
+pat = re.compile('\d{4}')
+block = soup.find('div', attrs = {'id':'L3_MainContentPlaceholder'}).find_all_next('ul')
+for b in block:
+    links = b.find_all('a')
+    for link in links:
+        if 'Spend' in link.text:
+            if '.csv' in link['href']:
+                url = 'https://www.wigan.gov.uk' + link['href']
+                csvMth = link.text.strip().split('-')[-1].strip().split('(')[0].strip()[:3]
+                csvYr = link.text.strip().split('-')[-1].strip().split('(')[0].strip()[-4:]
+                csvMth = convert_mth_strings(csvMth.upper())
+                todays_date = str(datetime.now())
+                if len(link.text.split('-')) > 2:
+                    tys = pat.findall(link.text)
+                    if len(tys) > 1:
+                        if int(tys[0]) < int(tys[1]):
+                            csvMth = 'Y1'
+                        if int(tys[0]) == int(tys[1]):
+                            csvMth = 'Q0'
+                    if len(tys) == 1:
+                        csvMth = 'Q0'
+                data.append([csvYr, csvMth, url])
+
+
+#### STORE DATA 1.0
+
+for row in data:
+    csvYr, csvMth, url = row
+    filename = entity_id + "_" + csvYr + "_" + csvMth
+    todays_date = str(datetime.now())
+    file_url = url.strip()
+
+    valid = validate(filename, file_url)
+
+    if valid == True:
+        scraperwiki.sqlite.save(unique_keys=['l'], data={"l": file_url, "f": filename, "d": todays_date })
+        print filename
+    else:
+        errors += 1
+
+if errors > 0:
+    raise Exception("%d errors occurred during scrape." % errors)
+
+
+#### EOF
