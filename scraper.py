@@ -120,6 +120,8 @@ for b in block:
                             csvMth = 'Q0'
                     if len(tys) == 1:
                         csvMth = 'Q0'
+                else:
+                    csvMth = 'Q0'
                 data.append([csvYr, csvMth, url])
 
 
