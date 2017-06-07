@@ -10,9 +10,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 
-
-#### FUNCTIONS 1.2
-import requests    # import requests to validate url
+#### FUNCTIONS 1.1
+import requests   #import requests for validating urls
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -40,23 +39,25 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = requests.get(url, allow_redirects=True, timeout=20)
+        r = requests.get(url)
         count = 1
         while r.status_code == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = requests.get(url, allow_redirects=True, timeout=20)
+            r = requests.get(url)
         sourceFilename = r.headers.get('Content-Disposition')
+
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1]
         validURL = r.status_code == 200
-        validFiletype = ext in ['.csv', '.xls', '.xlsx']
+        validFiletype = ext.lower() in ['.csv', '.xls', '.zip', '.xlsx', '.pdf']
         return validURL, validFiletype
     except:
         print ("Error validating URL.")
         return False, False
+
 
 
 def validate(filename, file_url):
@@ -83,46 +84,29 @@ def convert_mth_strings ( mth_string ):
         mth_string = mth_string.replace(k, v)
     return mth_string
 
-
 #### VARIABLES 1.0
 
-entity_id = "E4210_WMBC_gov"
-url = "https://www.wigan.gov.uk/Council/DataProtection-FOI-Stats/Spending-and-Finance-data.aspx"
+entity_id = "NHTRTVFT_5BPNFT_gov"
+url = "http://www.5boroughspartnership.nhs.uk/financial-transparency-reports/"
 errors = 0
 data = []
-
 
 #### READ HTML 1.0
 
 html = urllib2.urlopen(url)
 soup = BeautifulSoup(html, 'lxml')
 
+
 #### SCRAPE DATA
 
-pat = re.compile('\d{4}')
-block = soup.find('div', attrs = {'id':'L3_MainContentPlaceholder'}).find_all_next('ul')
-for b in block:
-    links = b.find_all('a')
-    for link in links:
-        if 'Spend' in link.text:
-            if '.csv' in link['href']:
-                url = 'https://www.wigan.gov.uk' + link['href']
-                csvMth = link.text.strip().split('-')[-1].strip().split('(')[0].strip()[:3]
-                csvYr = link.text.strip().split('-')[-1].strip().split('(')[0].strip()[-4:]
-                csvMth = convert_mth_strings(csvMth.upper())
-                todays_date = str(datetime.now())
-                if len(link.text.split('-')) > 2:
-                    tys = pat.findall(link.text)
-                    if len(tys) > 1:
-                        if int(tys[0]) < int(tys[1]):
-                            csvMth = 'Y1'
-                        if int(tys[0]) == int(tys[1]):
-                            csvMth = 'Q0'
-                    if len(tys) == 1:
-                        csvMth = 'Q0'
-                else:
-                    csvMth = 'Q0'
-                data.append([csvYr, csvMth, url])
+
+blocks = soup.find('div', 'related_docs').find_all('a')
+for block in blocks:
+    url = 'http://www.5boroughspartnership.nhs.uk' + block['href']
+    csvMth = block.text.split()[0][:3]
+    csvYr = block.text.split()[-1]
+    csvMth = convert_mth_strings(csvMth.upper())
+    data.append([csvYr, csvMth, url])
 
 
 #### STORE DATA 1.0
