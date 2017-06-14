@@ -9,9 +9,7 @@ import urllib2
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-
-#### FUNCTIONS 1.1
-import requests   #import requests for validating urls
+#### FUNCTIONS 1.0
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -39,19 +37,19 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = requests.get(url)
+        r = urllib2.urlopen(url)
         count = 1
-        while r.status_code == 500 and count < 4:
+        while r.getcode() == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = requests.get(url)
+            r = urllib2.urlopen(url)
         sourceFilename = r.headers.get('Content-Disposition')
 
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1]
-        validURL = r.status_code == 200
+        validURL = r.getcode() == 200
         validFiletype = ext.lower() in ['.csv', '.xls', '.zip', '.xlsx', '.pdf']
         return validURL, validFiletype
     except:
@@ -86,8 +84,8 @@ def convert_mth_strings ( mth_string ):
 
 #### VARIABLES 1.0
 
-entity_id = "NHTRTVFT_5BPNFT_gov"
-url = "http://www.5boroughspartnership.nhs.uk/financial-transparency-reports/"
+entity_id = "NFTRXK_SAWBHNT_gov"
+url = "https://www.swbh.nhs.uk/about-us/trust-publications/"
 errors = 0
 data = []
 
@@ -100,13 +98,21 @@ soup = BeautifulSoup(html, 'lxml')
 #### SCRAPE DATA
 
 
-blocks = soup.find('div', 'related_docs').find_all('a')
+blocks = soup.find('a', text='Trust publications').find_next('ul').find_all('li')
 for block in blocks:
-    url = 'http://www.5boroughspartnership.nhs.uk' + block['href']
-    csvMth = block.text.split()[0][:3]
-    csvYr = block.text.split()[-1]
-    csvMth = convert_mth_strings(csvMth.upper())
-    data.append([csvYr, csvMth, url])
+    link_page = block.find('a')['href']
+    html_page = urllib2.urlopen(link_page)
+    soup_page = BeautifulSoup(html_page, 'lxml')
+    doc_links = soup_page.find('div', 'content page-default').find_all('a')
+    for doc in doc_links:
+        if '.csv' in doc['href']:
+            url = doc['href']
+            csvMth = doc.text.split()[0][:3]
+            csvYr = '20' + doc.text.split()[-1][-2:]
+            csvMth = convert_mth_strings(csvMth.upper())
+            data.append([csvYr, csvMth, url])
+
+
 
 
 #### STORE DATA 1.0
